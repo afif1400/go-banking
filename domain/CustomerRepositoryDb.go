@@ -18,18 +18,14 @@ func (d CustomerRepositoryDb) FindAll() ([]Customer, *err.AppError) {
 	rows, errs := d.client.Query(findAllSql)
 
 	if errs != nil {
-		return nil, err.NewUnexpectedError("error while querying customer table")
+		return nil, err.NewUnexpectedError("unexpected database error")
 	}
 	var customers []Customer
 	for rows.Next() {
 		var customer Customer
 		errs := rows.Scan(&customer.Id, &customer.Name, &customer.City, &customer.Zipcode, &customer.DateOfBirth, &customer.Status)
 		if errs != nil {
-			if errs == sql.ErrNoRows {
-				return nil, err.NewNotFoundError("Customer not found")
-			} else {
-				return nil, err.NewUnexpectedError("unexpected database error")
-			}
+			return nil, err.NewNotFoundError("unexpected database error")
 		}
 		customers = append(customers, customer)
 	}
@@ -53,6 +49,32 @@ func (d CustomerRepositoryDb) ById(id string) (*Customer, *err.AppError) {
 	}
 
 	return &customer, nil
+}
+
+func (d CustomerRepositoryDb) FindAllByStatus(status string) ([]Customer, *err.AppError) {
+	findByStatusSql := "SELECT customer_id, name, city, zipcode, date_of_birth, status FROM customers where status = ? "
+	if status == "active" {
+		status = "1"
+	} else if status == "inactive" {
+		status = "0"
+	} else {
+		return nil, err.NewNotFoundError("Not customer with status " + status)
+	}
+	rows, errs := d.client.Query(findByStatusSql, status)
+	if errs != nil {
+		return nil, err.NewUnexpectedError("unexpected database error")
+	}
+	var customers []Customer
+	for rows.Next() {
+		var customer Customer
+		errs := rows.Scan(&customer.Id, &customer.Name, &customer.City, &customer.Zipcode, &customer.DateOfBirth, &customer.Status)
+		if errs != nil {
+			return nil, err.NewUnexpectedError("unexpected database error")
+		}
+		customers = append(customers, customer)
+	}
+
+	return customers, nil
 }
 
 func NewCustomerRepositoryDb() CustomerRepositoryDb {

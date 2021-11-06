@@ -22,6 +22,16 @@ func (ch *CustomerHandlers) getAllCustomers(w http.ResponseWriter, r *http.Reque
 	}
 }
 
+func (ch *CustomerHandlers) getCustomersByStatus(w http.ResponseWriter, r *http.Request) {
+	status := r.URL.Query().Get("status")
+	customers, err := ch.service.GetAllCustomerByStatus(status)
+	if err != nil {
+		writeResponse(w, err.Code, err.AsMessage())
+	} else {
+		writeResponse(w, http.StatusOK, customers)
+	}
+}
+
 func (ch *CustomerHandlers) getCustomer(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars["customer_id"]
