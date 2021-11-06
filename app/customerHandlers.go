@@ -10,22 +10,11 @@ import (
 	"github.com/gorilla/mux"
 )
 
-type Customer struct {
-	Name    string `json:"full_name" xml:"full_name"`
-	City    string `json:"city" xml:"city"`
-	Zipcode string `json:"zip_code" xml:"zipcode"`
-}
-
 type CustomerHandlers struct {
 	service service.CustomerService
 }
 
 func (ch *CustomerHandlers) getAllCustomers(w http.ResponseWriter, r *http.Request) {
-	// Customers := []Customer{
-	// 	{Name: "Afif", City: "bengaluru", Zipcode: "560085"},
-	// 	{Name: "Ahmed", City: "Raichur", Zipcode: "584101"},
-	// }
-
 	customers, err := ch.service.GetAllCustomer()
 	if err != nil {
 		fmt.Println(err)
@@ -44,14 +33,23 @@ func (ch *CustomerHandlers) getCustomer(w http.ResponseWriter, r *http.Request) 
 	id := vars["customer_id"]
 	customer, err := ch.service.GetCustomer(id)
 	if err != nil {
-		w.WriteHeader(err.Code)
-		fmt.Fprintln(w, err.Message)
+		writeResponse(w, err.Code, err.AsMessage())
+		json.NewEncoder(w).Encode(err.AsMessage())
 	} else {
-		w.Header().Add("Content-Type", "application/json")
+		writeResponse(w, http.StatusOK, customer)
 		json.NewEncoder(w).Encode(customer)
 	}
 }
 
 func createCustomer(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "Post request recieved")
+}
+
+func writeResponse(w http.ResponseWriter, code int, data interface{}) {
+	w.Header().Add("Content-Type", "application/json")
+	w.WriteHeader(code)
+	err := json.NewEncoder(w).Encode(data)
+	if err != nil {
+		panic(err)
+	}
 }
