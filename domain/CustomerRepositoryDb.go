@@ -81,7 +81,7 @@ func (d CustomerRepositoryDb) FindAllByStatus(status string) ([]Customer, *err.A
 }
 
 func NewCustomerRepositoryDb() CustomerRepositoryDb {
-	client, err := sql.Open("mysql", "vulcan:password@tcp(localhost:3306)/banking")
+	client, err := sql.Open("mysql", "root:iball@123123@tcp(localhost:3306)/banking")
 	if err != nil {
 		panic(err)
 	}

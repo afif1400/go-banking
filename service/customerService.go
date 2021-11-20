@@ -7,21 +7,57 @@ import (
 )
 
 type CustomerService interface {
-	GetAllCustomer() ([]domain.Customer, *err.AppError)
+	GetAllCustomer() ([]*dto.CustomerResponse, *err.AppError)
 	GetCustomer(string) (*dto.CustomerResponse, *err.AppError)
-	GetAllCustomerByStatus(string) ([]domain.Customer, *err.AppError)
+	GetAllCustomerByStatus(string) ([]*dto.CustomerResponse, *err.AppError)
 }
 
 type DefaultCustomerService struct {
 	repo domain.CustomerRepository
 }
 
-func (s DefaultCustomerService) GetAllCustomer() ([]domain.Customer, *err.AppError) {
-	return s.repo.FindAll()
+func (s DefaultCustomerService) GetAllCustomer() ([]*dto.CustomerResponse, *err.AppError) {
+	customers, errs := s.repo.FindAll()
+	if errs != nil {
+		return nil, errs
+	}
+
+	response := make([]*dto.CustomerResponse, len(customers))
+
+	for i, c := range customers {
+		response[i] = &dto.CustomerResponse{
+			Id:          c.Id,
+			Name:        c.Name,
+			City:        c.City,
+			Zipcode:     c.Zipcode,
+			DateOfBirth: c.DateOfBirth,
+			Status:      c.Status,
+		}
+	}
+
+	return response, nil
 }
 
-func (s DefaultCustomerService) GetAllCustomerByStatus(status string) ([]domain.Customer, *err.AppError) {
-	return s.repo.FindAllByStatus(status)
+func (s DefaultCustomerService) GetAllCustomerByStatus(status string) ([]*dto.CustomerResponse, *err.AppError) {
+	customers, errs := s.repo.FindAllByStatus(status)
+	if errs != nil {
+		return nil, errs
+	}
+
+	response := make([]*dto.CustomerResponse, len(customers))
+
+	for i, c := range customers {
+		response[i] = &dto.CustomerResponse{
+			Id:          c.Id,
+			Name:        c.Name,
+			City:        c.City,
+			Zipcode:     c.Zipcode,
+			DateOfBirth: c.DateOfBirth,
+			Status:      c.Status,
+		}
+	}
+
+	return response, nil
 }
 
 func (s DefaultCustomerService) GetCustomer(id string) (*dto.CustomerResponse, *err.AppError) {
@@ -31,14 +67,7 @@ func (s DefaultCustomerService) GetCustomer(id string) (*dto.CustomerResponse, *
 		return nil, errs
 	}
 
-	response := dto.CustomerResponse{
-		Id:          customer.Id,
-		Name:        customer.Name,
-		City:        customer.City,
-		Zipcode:     customer.Zipcode,
-		DateOfBirth: customer.DateOfBirth,
-		Status:      customer.Status,
-	}
+	response := customer.ToDto()
 
 	return &response, nil
 }
