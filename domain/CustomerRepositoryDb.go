@@ -4,6 +4,8 @@ import (
 	"banking/err"
 	"banking/logger"
 	"database/sql"
+	"fmt"
+	"os"
 	"time"
 
 	_ "github.com/go-sql-driver/mysql"
@@ -81,7 +83,16 @@ func (d CustomerRepositoryDb) FindAllByStatus(status string) ([]Customer, *err.A
 }
 
 func NewCustomerRepositoryDb() CustomerRepositoryDb {
-	client, err := sql.Open("mysql", "root:iball@123123@tcp(localhost:3306)/banking")
+
+	dbUser := os.Getenv("DB_USER")
+	dbPassword := os.Getenv("DB_PASSWORD")
+	dbName := os.Getenv("DB_NAME")
+	dbHost := os.Getenv("DB_HOST")
+	dbPort := os.Getenv("DB_PORT")
+
+	dataSource := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", dbUser, dbPassword, dbHost, dbPort, dbName)
+
+	client, err := sql.Open("mysql", dataSource)
 	if err != nil {
 		panic(err)
 	}
