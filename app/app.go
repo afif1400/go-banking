@@ -7,8 +7,10 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/gorilla/mux"
+	"github.com/jmoiron/sqlx"
 	"github.com/joho/godotenv"
 )
 
@@ -29,13 +31,18 @@ func Start() {
 
 	//wiring
 	// ch := CustomerHandlers{service.NewCustomerService(domain.NewCustomerRepositoryStub())}
-	ch := CustomerHandlers{service.NewCustomerService(domain.NewCustomerRepositoryDb())}
+	dbClient := getDbClient()
+	customerRepositoryDb := domain.NewCustomerRepositoryDb(dbClient)
+	accountRepositoryDb := domain.NewAccountRepositoryDb(dbClient)
+
+	ch := CustomerHandler{service.NewCustomerService(customerRepositoryDb)}
+	ah := AccountHandler{service.NewAccountService(accountRepositoryDb)}
 
 	//define routes
 	router.HandleFunc("/customers", ch.getCustomersByStatus).Methods("GET").Queries("status", "{status}")
 	router.HandleFunc("/customers", ch.getAllCustomers).Methods("GET")
 	router.HandleFunc("/customers/{customer_id:[0-9]+}", ch.getCustomer).Methods("GET")
-	router.HandleFunc("/customers", createCustomer).Methods("POST")
+	router.HandleFunc("/customers/{customer_id:[0-9]+}/account", ah.NewAccount).Methods("POST")
 
 	address := os.Getenv("SERVER_ADDRESS")
 	port := os.Getenv("SERVER_PORT")
@@ -44,4 +51,25 @@ func Start() {
 	if err != nil {
 		panic(err)
 	}
+}
+
+func getDbClient() *sqlx.DB {
+	dbUser := os.Getenv("DB_USER")
+	dbPassword := os.Getenv("DB_PASSWORD")
+	dbName := os.Getenv("DB_NAME")
+	dbHost := os.Getenv("DB_HOST")
+	dbPort := os.Getenv("DB_PORT")
+
+	dataSource := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", dbUser, dbPassword, dbHost, dbPort, dbName)
+
+	client, err := sqlx.Open("mysql", dataSource)
+	if err != nil {
+		panic(err)
+	}
+	// See "Important settings" section.
+	client.SetConnMaxLifetime(time.Minute * 3)
+	client.SetMaxOpenConns(10)
+	client.SetMaxIdleConns(10)
+
+	return client
 }

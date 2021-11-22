@@ -1,6 +1,9 @@
 package domain
 
-import "banking/err"
+import (
+	"banking/dto"
+	"banking/err"
+)
 
 type Account struct {
 	AccountId   string
@@ -11,6 +14,10 @@ type Account struct {
 	Status      string
 }
 
+func (a Account) ToNewAccountResponseDto() dto.NewAccountResponse {
+	return dto.NewAccountResponse{AccountId: a.AccountId}
+}
+
 type AccountRepository interface {
-	Save(Account) (*Account, err.AppError)
+	Save(Account) (*Account, *err.AppError)
 }
